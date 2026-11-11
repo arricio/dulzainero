@@ -40,7 +40,7 @@ header span{font-size:14px;opacity:.85}
 .pane{display:none}
 .pane.on{display:block}
 .pasos{display:flex;gap:6px;margin:0 0 12px;padding:0;list-style:none;font-size:14px;color:#7c5a52}
-.pasos li{flex:1;display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:3px solid var(--lino-2)}
+.pasos li{cursor:pointer;flex:1;display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:3px solid var(--lino-2)}
 .pasos b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--lino-2);font-size:13px;color:#7c5a52}
 .pasos li.hecho{border-color:var(--verde);color:var(--verde)}
 .pasos li.hecho b{background:var(--verde);color:var(--lino)}
@@ -124,7 +124,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   <div id="stageWrap"><canvas id="stage" aria-label="Escenario: la persona de la foto tocando la dulzaina"></canvas></div>
   <div class="cenefa" aria-hidden="true"></div>
   <main id="panel">
-    <ol class="pasos" id="pasos"><li><b>1</b>Foto</li><li><b>2</b>Canción</li><li><b>3</b>A tocar</li></ol>
+    <ol class="pasos" id="pasos"><li role="button" tabindex="0"><b>1</b>Foto</li><li role="button" tabindex="0"><b>2</b>Canción</li><li role="button" tabindex="0"><b>3</b>A tocar</li></ol>
     <p class="nota" id="pulso" style="display:none"></p>
     <div class="error" id="error" role="alert"></div>
     <div class="error" id="ayuda" role="status">¿No se ha abierto la galería? Abre esta página en Chrome o Safari, o instala la aplicación: dentro de otras aplicaciones la galería puede estar bloqueada.</div>
@@ -139,7 +139,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
         <p class="nota" id="instAnd">Para tenerla con su icono: toca los tres puntos de arriba a la derecha del navegador y elige «Instalar aplicación» o «Añadir a pantalla de inicio».</p>
         <p class="nota" id="instIOS" style="display:none">Para tenerla con su icono en el iPhone: toca Compartir y luego «Añadir a pantalla de inicio».</p>
       </div>
-      <p class="nota">La foto y la canción no salen de tu móvil.</p>
+      <p class="nota">Privacidad: la foto y la canción se quedan en tu móvil. No se envían a internet ni las ve nadie más.</p>
     </section>
 
     <section class="pane" id="p-ajuste">
@@ -1054,6 +1054,10 @@ each('.inCancion',function(el){el.addEventListener('change',function(){var f=thi
 $('sinFoto').addEventListener('click',function(){S.img=null;S.skin=[214,160,124];S.sleeve=[239,230,210];go('cancion');});
 $('fotoLista').addEventListener('click',function(){sampleSkin();go(S.notes.length?'tocar':'cancion');});
 $('demo').addEventListener('click',demo);
+// los pasos de arriba también se pueden tocar para ir a cada pantalla
+Array.prototype.forEach.call($('pasos').children,function(li,i){function ir(){if(S.fase==='analisis')return;hideError();
+    if(i===0)go(S.img?'ajuste':'foto');else if(i===1)go('cancion');else if(S.notes.length)go('tocar');else{go('cancion');showError('Primero elige una canción: búscala por título o prueba la melodía de ejemplo.');}}
+  li.addEventListener('click',ir);li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();ir();}});});
 $('irYo').addEventListener('click',enterYo);$('irYo2').addEventListener('click',enterYo);
 $('yoVolver').addEventListener('click',function(){go(S.notes.length?'tocar':'cancion');});
 $('modoNotas').addEventListener('click',function(){yoModo('notas');});$('modoDedos').addEventListener('click',function(){yoModo('dedos');});
