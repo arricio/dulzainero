@@ -230,8 +230,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
       <p class="resumen" id="resumen"></p>
       <div class="ajuste">
         <span id="volDLbl">Dulzaina</span><input type="range" id="volD" min="0" max="100" value="85" aria-label="Volumen de la dulzaina">
-        <span id="lblFondo">Canción de fondo</span><input type="range" id="volC" min="0" max="100" value="45" aria-label="Volumen de la canción de fondo">
+        <span id="lblFondo">Canción de fondo</span><input type="range" id="volC" min="0" max="100" value="0" aria-label="Volumen de la canción de fondo">
       </div>
+      <p class="nota" style="margin:6px 0 0">Por defecto solo suena el instrumento. Sube «Canción de fondo» si quieres oír también la canción.</p>
       <label class="conm" id="conmVoz"><input type="checkbox" id="sinVoz"> Bajar la voz de la canción original</label>
       <p class="nota" style="margin-bottom:10px">Si no suena, sube el volumen y quita el modo silencio del móvil.</p>
       <button class="btn sec" id="irYo2" type="button">Tocar yo la dulzaina</button>
@@ -245,7 +246,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 <script id="melodySrc">
 // Extracción de melodía principal (saliencia armónica + Viterbi). Funciona en Worker y en Node.
-function extractMelody(x, fs, onProgress) {
+function extractMelody(x, fs, onProgress, xs) {
   var hop = Math.round(fs * 0.0232);
   var win = 1 << Math.round(Math.log2(fs * 0.093));
   var nfft = win * 2, half = nfft >> 1;
@@ -278,21 +279,30 @@ function extractMelody(x, fs, onProgress) {
   for (k = 0; k <= half; k++) { var f = k * binHz; emph[k] = Math.min(1.5, Math.max(0.25, Math.sqrt(f / 900))); if (f > 4500) emph[k] *= 0.6; }
   var sal = new Float32Array(nFrames * NB), peak = new Float32Array(nFrames), meanS = new Float32Array(nFrames);
   var sm = new Float32Array(half + 1);
-  for (var j = 0; j < nFrames; j++) {
-    var off = j * hop;
+  function fft(src, off) {
+    var i, size, hs, step, s0, q, t, a, c, tr, ti;
     for (i = 0; i < nfft; i++) { re[i] = 0; im[i] = 0; }
-    for (i = 0; i < win; i++) re[rev[i]] = x[off + i] * hann[i];
-    for (var size = 2; size <= nfft; size <<= 1) {
-      var hs = size >> 1, step = nfft / size;
-      for (var s0 = 0; s0 < nfft; s0 += size) {
-        for (var q = 0, t = 0; q < hs; q++, t += step) {
-          var a = s0 + q, c = a + hs;
-          var tr = re[c] * cosT[t] + im[c] * sinT[t], ti = im[c] * cosT[t] - re[c] * sinT[t];
+    for (i = 0; i < win; i++) re[rev[i]] = src[off + i] * hann[i];
+    for (size = 2; size <= nfft; size <<= 1) {
+      hs = size >> 1; step = nfft / size;
+      for (s0 = 0; s0 < nfft; s0 += size) {
+        for (q = 0, t = 0; q < hs; q++, t += step) {
+          a = s0 + q; c = a + hs;
+          tr = re[c] * cosT[t] + im[c] * sinT[t]; ti = im[c] * cosT[t] - re[c] * sinT[t];
           re[c] = re[a] - tr; im[c] = im[a] - ti; re[a] += tr; im[a] += ti;
         }
       }
     }
-    for (k = 0; k <= half; k++) mag[k] = Math.sqrt(Math.sqrt(re[k] * re[k] + im[k] * im[k])) * emph[k];
+  }
+  // en estéreo, la voz principal suele ir al centro: se resta lo que suena solo a los lados
+  var useSide = false, raw = new Float32Array(half + 1);
+  if (xs && xs.length === x.length) { var em = 0, es = 0; for (i = 0; i < x.length; i += 7) { em += x[i] * x[i]; es += xs[i] * xs[i]; } useSide = es > 0.004 * em; }
+  for (var j = 0; j < nFrames; j++) {
+    var off = j * hop;
+    fft(x, off);
+    for (k = 0; k <= half; k++) raw[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+    if (useSide) { fft(xs, off); for (k = 0; k <= half; k++) { var cv = raw[k] - 1.6 * Math.sqrt(re[k] * re[k] + im[k] * im[k]); raw[k] = cv > 0 ? cv : 0; } }
+    for (k = 0; k <= half; k++) mag[k] = Math.sqrt(raw[k]) * emph[k];
     // quita el fondo ancho (percusión, ruido): resta una media móvil
     var R = Math.round(120 / binHz), acc = 0, cnt = 0;
     for (k = 0; k <= half; k++) {
@@ -360,7 +370,7 @@ function extractMelody(x, fs, onProgress) {
   var runs = [], st = 0;
   for (j = 1; j <= nFrames; j++) if (j === nFrames || q2[j] !== q2[st]) { runs.push({ a: st, b: j, m: q2[st] }); st = j; }
   // elimina notas muy cortas uniéndolas a la vecina
-  var MINF = 4;
+  var MINF = 5;
   for (var pass = 0; pass < 3; pass++) {
     for (i = 0; i < runs.length; i++) {
       var rr = runs[i]; if (rr.m < 0 || rr.b - rr.a >= MINF) continue;
@@ -390,6 +400,16 @@ function extractMelody(x, fs, onProgress) {
       notes.push({ t: t0 + a0 * dt, d: (e - a0) * dt, m: rr.m, v: Math.min(1, av / ref), tongue: c2 > 0 || !(runs[i - 1] && runs[i - 1].m >= 0) });
       a0 = e;
     }
+  }
+  // quita notas sueltas muy cortas (suelen ser ruido del acompañamiento)
+  notes = notes.filter(function (n, q) { var p = notes[q - 1], nx = notes[q + 1]; return !(n.d < 0.13 && (!p || n.t - (p.t + p.d) > 0.3) && (!nx || nx.t - (n.t + n.d) > 0.3)); });
+  // corrige saltos de octava aislados comparando con las notas de alrededor
+  for (pass = 0; pass < 2; pass++) for (i = 0; i < notes.length; i++) {
+    var nb = []; for (j = i - 1; j >= 0 && notes[i].t - notes[j].t < 1.5 && nb.length < 6; j--) nb.push(notes[j].m);
+    for (j = i + 1, k = 0; j < notes.length && notes[j].t - notes[i].t < 1.5 && k < 6; j++, k++) nb.push(notes[j].m);
+    if (nb.length < 4) continue; nb.sort(function (p1, p2) { return p1 - p2; }); var med = nb[nb.length >> 1], pm = notes[i].m;
+    var near = 0; for (j = 0; j < nb.length; j++) if (Math.abs(nb[j] - med) <= 5) near++;
+    if (near >= 0.75 * nb.length && Math.abs(pm - med) >= 10) { var cd = pm + (pm < med ? 12 : -12); if (Math.abs(cd - med) <= 4) notes[i].m = cd; }
   }
   if (onProgress) onProgress(1);
   return { notes: notes, tune: tune, dur: x.length / fs };
@@ -1131,15 +1151,15 @@ function enterYo(){stop();buildYo();go('yo');yoModo(YO.modo);}
 
 /* ───────── De la canción a las notas ───────── */
 var worker=null;
-function runExtract(x,fs,onP){
+function runExtract(x,fs,onP,xs){
   return new Promise(function(res,rej){
     try{
-      if(!worker){var src=$('melodySrc').textContent+'\nself.onmessage=function(e){var r=extractMelody(e.data.x,e.data.fs,function(p){self.postMessage({p:p});});self.postMessage({r:r});};';
+      if(!worker){var src=$('melodySrc').textContent+'\nself.onmessage=function(e){var r=extractMelody(e.data.x,e.data.fs,function(p){self.postMessage({p:p});},e.data.xs);self.postMessage({r:r});};';
         worker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));}
       worker.onmessage=function(e){if(e.data.p!=null)onP(e.data.p);else res(e.data.r);};
-      worker.onerror=function(){worker=null;setTimeout(function(){try{res(extractMelody(x,fs,null));}catch(er){rej(er);}},30);};
-      worker.postMessage({x:x,fs:fs});
-    }catch(e){worker=null;setTimeout(function(){try{res(extractMelody(x,fs,null));}catch(er){rej(er);}},30);}
+      worker.onerror=function(){worker=null;setTimeout(function(){try{res(extractMelody(x,fs,null,xs));}catch(er){rej(er);}},30);};
+      worker.postMessage({x:x,xs:xs,fs:fs});
+    }catch(e){worker=null;setTimeout(function(){try{res(extractMelody(x,fs,null,xs));}catch(er){rej(er);}},30);}
   });
 }
 function decode(buf){return new Promise(function(res,rej){var p;try{p=AC.decodeAudioData(buf,res,rej);}catch(e){rej(e);}if(p&&p.catch)p.catch(rej);});}
@@ -1153,8 +1173,10 @@ function loadSong(file){
       var sr=buf.sampleRate,fac=Math.max(1,Math.round(sr/11025)),maxS=Math.min(buf.length,Math.round(sr*600)),n=Math.floor(maxS/fac),x=new Float32Array(n),ch=buf.numberOfChannels;
       for(var c=0;c<ch;c++){var d=buf.getChannelData(c);for(var i=0,j=0;i<n;i++){var s=0;for(var k=0;k<fac;k++)s+=d[j++];x[i]+=s;}}
       var inv=1/(fac*ch);for(i=0;i<n;i++)x[i]*=inv;
+      // en estéreo se manda también la diferencia entre canales, para separar la voz (que va al centro) del acompañamiento
+      var xs=null;if(ch>=2){xs=new Float32Array(n);var dl=buf.getChannelData(0),dr2=buf.getChannelData(1),j2=0;for(i=0;i<n;i++){var s2=0;for(var k2=0;k2<fac;k2++){s2+=dl[j2]-dr2[j2];j2++;}xs[i]=s2/(2*fac);}}
       setProg(0.2,'Sacando la melodía…');
-      return runExtract(x,sr/fac,function(p){setProg(0.2+0.75*p,p>0.9?'Afinando la dulzaina…':'Sacando la melodía…');}).then(function(r){
+      return runExtract(x,sr/fac,function(p){setProg(0.2+0.75*p,p>0.9?'Afinando el instrumento…':'Sacando la melodía…');},xs).then(function(r){
         if(!r.notes||r.notes.length<6){fail('No he encontrado una melodía clara en esta canción. Prueba con otra en la que la voz o el instrumento principal se oiga bien.');return;}
         S.song=buf;S.demo=false;setMelody(r.notes,r.tune,Math.min(buf.duration,600),file.name);
       });
@@ -1170,7 +1192,10 @@ function fit(){ // coloca la melodía en el registro del instrumento elegido
   var base=I.lo||62,T=base+((pc-base)%12+12)%12,lo=I.lo||T,hi=I.hi||T+19,bk=0,bs=-1;
   for(k=-3;k<=3;k++){s=0;raw.forEach(function(n){var m=n.m+12*k;if(m>=lo&&m<=hi)s+=n.d;});if(s>bs+1e-6||(Math.abs(s-bs)<1e-6&&Math.abs(k)<Math.abs(bk))){bs=s;bk=k;}}
   S.T=T;S.rlo=lo;S.rhi=hi;S.tune=R.tune||0;
-  S.notes=raw.map(function(n){var p=n.m+12*bk;while(p<lo)p+=12;while(p>hi)p-=12;return {t:n.t,d:n.d,p:p,v:n.v,tongue:n.tongue};});
+  var prev=null,pEnd=-9;
+  S.notes=raw.map(function(n){var p=n.m+12*bk;
+    if(p<lo||p>hi){var bst=null,bd=1e9;for(var c=p-36;c<=p+36;c+=12){if(c<lo||c>hi)continue;var d=(prev!=null&&n.t-pEnd<1.5)?Math.abs(c-prev):Math.abs(c-p);if(d<bd){bd=d;bst=c;}}if(bst==null){while(p<lo)p+=12;while(p>hi)p-=12;}else p=bst;}
+    prev=p;pEnd=n.t+n.d;return {t:n.t,d:n.d,p:p,v:n.v,tongue:n.tongue};});
   for(i=1;i<S.notes.length;i++){var a=S.notes[i-1],b=S.notes[i];if(a.p===b.p&&b.t-(a.t+a.d)<0.03)b.tongue=true;}
   S.keyName=NOMBRES[pc];S.ni=0;
   $('resumen').textContent=(R.name?R.name.replace(/\.[a-z0-9]{2,5}$/i,'')+': ':'')+S.notes.length+' notas, '+I.n.toLowerCase()+' en '+S.keyName+'.';
@@ -1179,8 +1204,10 @@ function setMelody(raw,tune,dur,name){
   S.raw={notes:raw,tune:tune,name:name};S.dur=dur;S.offset=0;fit();
   $('tTotal').textContent=mmss(dur);
   var mono=!S.song||S.song.numberOfChannels<2;$('conmVoz').style.display=(S.demo||mono)?'none':'flex';$('lblFondo').textContent=S.demo?'Tamboril':'Canción de fondo';
+  if(!volTocado){$('volC').value=S.demo?40:0;paintRange($('volC'));}
   setProg(1);go('tocar');setVolumes();
 }
+var volTocado=false;
 function setInst(id){
   if(!INST[id]||id===S.inst)return;var was=S.playing;stop();liveOff();S.inst=id;
   Array.prototype.forEach.call($('insts').children,function(b){b.classList.toggle('on',b.dataset.id===id);});
@@ -1242,7 +1269,7 @@ $('continuo').addEventListener('change',function(){liveInit();yoUpdate();});$('o
 $('play').addEventListener('click',function(){if(S.playing)stop();else play();});
 $('otraFoto').addEventListener('click',function(){stop();go('foto');});
 $('otraCancion').addEventListener('click',function(){stop();go('cancion');});
-['volD','volC'].forEach(function(id){$(id).addEventListener('input',function(){paintRange(this);setVolumes();});paintRange($(id));});
+['volD','volC'].forEach(function(id){$(id).addEventListener('input',function(){if(id==='volC')volTocado=true;paintRange(this);setVolumes();});paintRange($(id));});
 $('sinVoz').addEventListener('change',setVolumes);
 var seeking=false,pos=$('pos');
 pos.addEventListener('input',function(){seeking=true;paintRange(pos);$('tAhora').textContent=mmss(S.dur*pos.value/1000);});
