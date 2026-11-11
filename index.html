@@ -78,6 +78,29 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .conm input{width:22px;height:22px;accent-color:var(--carmesi)}
 .enlaces{display:flex;gap:10px;margin-top:6px}
 .enlaces .btn{min-height:46px;font-size:16px;margin:0}
+.seg{display:flex;border:2px solid var(--carmesi);border-radius:24px;overflow:hidden;margin:0 0 12px}
+.seg button{flex:1;min-height:44px;border:0;background:transparent;color:var(--carmesi);font:700 17px var(--ui);cursor:pointer}
+.seg button.on{background:var(--carmesi);color:var(--lino)}
+#p-yo{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.teclas{display:flex;gap:4px;margin:0 0 10px}
+.tecla{flex:1;min-width:0;height:72px;padding:0;border-radius:10px;border:2px solid var(--carmesi);background:#fff8ea;color:var(--carmesi);font:700 16px var(--ui);touch-action:none;cursor:pointer;box-shadow:0 3px 0 #c9b48d}
+.tecla.on{background:var(--boj);transform:translateY(2px);box-shadow:0 1px 0 #c9b48d}
+.manos{display:flex;font-size:14px;color:#6a4a44;margin:0 0 4px}
+.manos span:first-child{flex:3;text-align:center}.manos span:last-child{flex:4;text-align:center;margin-left:14px}
+.agujeros{display:flex;gap:4px;margin:0 0 10px}
+.agujero{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:transparent;font:500 12px var(--ui);color:#6a4a44;touch-action:none;cursor:pointer}
+.agujero i{display:grid;place-items:center;width:100%;max-width:46px;aspect-ratio:1;border-radius:50%;border:3px solid var(--carmesi);background:#fff8ea;font:700 17px var(--ui);font-style:normal;color:var(--carmesi)}
+.agujero.on i{background:var(--carmesi);color:var(--lino)}
+.agujero.sep{margin-left:14px}
+#soplar{touch-action:none;background:var(--verde);border-color:var(--verde)}
+#soplar.on{background:var(--boj);border-color:var(--laton);color:var(--tinta)}
+.guia{margin:0 0 12px;padding-left:22px}.guia li{margin:0 0 6px}
+.digit{width:100%;border-collapse:collapse;margin:0 0 6px;font-size:16px}
+.digit th{font-weight:500;font-size:14px;color:#6a4a44;padding:2px 0}
+.digit td{text-align:center;padding:4px 0;border-top:1px solid var(--lino-2)}
+.digit td:first-child,.digit th:first-child{text-align:left;font-weight:700;color:var(--carmesi)}
+.digit b{display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid var(--carmesi);vertical-align:middle}
+.digit b.t{background:var(--carmesi)}
 .resumen{font-size:15px;color:var(--verde);font-weight:500;margin:8px 0 0}
 .error{background:#fff;border-left:4px solid var(--carmesi);padding:10px 12px;margin:0 0 12px;font-size:16px;display:none}
 .error.on{display:block}
@@ -123,6 +146,33 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
       <p>Sirve cualquier archivo de música o vídeo que tengas guardado. Sale mejor cuando la voz o el instrumento principal se oye claro.</p>
       <label class="btn pick">Elegir canción del móvil<input type="file" class="inCancion" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac"></label>
       <button class="btn sec" id="demo" type="button">Probar con una melodía de ejemplo</button>
+      <button class="btn sec" id="irYo" type="button">Tocar yo la dulzaina</button>
+    </section>
+
+    <section class="pane" id="p-yo">
+      <div class="seg"><button id="modoNotas" class="on" type="button">Con notas</button><button id="modoDedos" type="button">Con los dedos</button></div>
+      <div id="yoNotas">
+        <div class="teclas" id="teclas"></div>
+      </div>
+      <div id="yoDedos" style="display:none">
+        <div class="manos"><span>Mano izquierda</span><span>Mano derecha</span></div>
+        <div class="agujeros" id="agujeros"></div>
+        <button class="btn" id="soplar" type="button">Soplar (mantén pulsado)</button>
+        <label class="conm"><input type="checkbox" id="continuo"> Soplido continuo, sin mantener pulsado</label>
+      </div>
+      <label class="conm"><input type="checkbox" id="octAlta"> Octava alta (soplando más fuerte)</label>
+      <h2>Cómo se toca</h2>
+      <ol class="guia">
+        <li>La dulzaina tiene siete agujeros delante. La mano izquierda va arriba y tapa los tres primeros con índice, corazón y anular. La mano derecha va abajo y tapa los otros cuatro, del índice al meñique.</li>
+        <li>Con todos tapados suena la nota más grave. Al destapar de abajo arriba, de uno en uno, se sube la escala.</li>
+        <li>Con todos abiertos suena la octava. Las notas más agudas se sacan con las mismas posiciones, soplando con más fuerza.</li>
+        <li>Cada nota se empieza con un golpe de lengua en la caña, sin dejar de soplar.</li>
+      </ol>
+      <p><b>Con notas:</b> pulsa una nota y fíjate en qué dedos se levantan en la dulzaina de arriba.</p>
+      <p><b>Con los dedos:</b> deja el móvil sobre una mesa, apoya tres dedos de la izquierda y cuatro de la derecha en los círculos (dedo apoyado, agujero tapado) y pulsa Soplar. Levanta dedos empezando por el meñique derecho.</p>
+      <table class="digit" id="tabla"></table>
+      <p class="nota">Círculo relleno, agujero tapado. El 1 es el de arriba, el más cercano a la boca. Es la digitación básica; las dulzainas con llaves tienen más posiciones.</p>
+      <button class="btn sec" id="yoVolver" type="button">Volver</button>
     </section>
 
     <section class="pane" id="p-analisis">
@@ -148,6 +198,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
       </div>
       <label class="conm" id="conmVoz"><input type="checkbox" id="sinVoz"> Bajar la voz de la canción original</label>
       <p class="nota" style="margin-bottom:10px">Si no suena, sube el volumen y quita el modo silencio del móvil.</p>
+      <button class="btn sec" id="irYo2" type="button">Tocar yo la dulzaina</button>
       <div class="enlaces">
         <button class="btn sec" id="otraFoto" type="button">Cambiar foto</button>
         <button class="btn sec" id="otraCancion" type="button">Cambiar canción</button>
@@ -542,7 +593,7 @@ function fingering(m){ // 7 agujeros, de arriba abajo: 1 tapado, 0 abierto, .5 m
 function frame(now){
   requestAnimationFrame(frame);
   if(!Wp)return;
-  if(!S.playing&&S.fase!=='ajuste'&&now-(frame.last||0)<66)return;
+  if(!S.playing&&S.fase!=='ajuste'&&S.fase!=='yo'&&now-(frame.last||0)<66)return;
   var t=playTime(),dt=Math.min(0.05,(now-(frame.last||now))/1000);frame.last=now;
   // nota actual (con un pelín de adelanto para los dedos)
   var cur=null,nxt=null;
@@ -557,14 +608,16 @@ function frame(now){
     }
     if(S.playing&&t>=S.dur){stop(true);}
   }
+  var live=S.fase==='yo'&&LV&&LV.on;
+  if(live){cur=LV.note;var lf=fingering(cur.p);S.hi=lf.hi;if(YO.modo==='notas')for(i=0;i<7;i++)S.liftT[i]=1-lf.f[i];if(cur!==S.cur){S.lastOnset=now;spawn();}}
   var prevCur=S.cur;S.cur=cur;
-  var blowing=S.playing&&!!cur,phrase=S.playing&&(!!cur||(nxt&&nxt.t-t<0.45));
+  var blowing=(S.playing&&!!cur)||live,phrase=live||(S.playing&&(!!cur||(nxt&&nxt.t-t<0.45)));
   if(blowing&&cur!==prevCur)S.pulse=1;S.pulse=(S.pulse||0)*Math.exp(-dt*9);
-  var target=phrase?(0.84+(S.hi?0.16:0)+0.05*Math.sin(now*0.006)):(S.playing?0.05:(S.fase==='tocar'?0:0.10+0.10*Math.sin(now*0.0015)));
+  var target=phrase?(0.84+(S.hi?0.16:0)+0.05*Math.sin(now*0.006)):(S.playing?0.05:((S.fase==='tocar'||S.fase==='yo')?0:0.10+0.10*Math.sin(now*0.0015)));
   var rate=target>S.rawPuff?10:4.5;S.rawPuff+=(target-S.rawPuff)*Math.min(1,dt*rate);S.puff=Math.max(0,S.rawPuff*(1-0.17*S.pulse));
-  var pt=phrase?1:(S.fase==='tocar'?0.6:0.4);S.purse+=(pt-S.purse)*Math.min(1,dt*10);
+  var pt=phrase?1:((S.fase==='tocar'||S.fase==='yo')?0.6:0.4);S.purse+=(pt-S.purse)*Math.min(1,dt*10);
   for(i=0;i<7;i++)S.lift[i]+=(S.liftT[i]-S.lift[i])*Math.min(1,dt*30);
-  var since=(now-S.lastOnset)/1000,bob=reduce?0:0.006*Math.exp(-since*7)*(S.playing?1:0);
+  var since=(now-S.lastOnset)/1000,bob=reduce?0:0.006*Math.exp(-since*7)*((S.playing||live)?1:0);
 
   cx.setTransform(Wp,0,0,Wp,0,0);
   if(S.img)drawPhoto(bob);else drawBust();
@@ -579,7 +632,7 @@ function frame(now){
   drawHands(alpha);
   if(adj)drawGuide(now);
   drawParts(dt);
-  if(S.fase==='tocar')drawHud(cur);
+  if(S.fase==='tocar'||S.fase==='yo')drawHud(cur);
   drawCinta(t);
   if(S.fase==='tocar'&&!seeking){var pos=$('pos');pos.value=S.dur?Math.round(1000*t/S.dur):0;paintRange(pos);$('tAhora').textContent=mmss(t);}
 }
@@ -775,6 +828,56 @@ function stop(ended){
 }
 function setIcon(){$('icoPlay').innerHTML=S.playing?'<path d="M6 4.5h4.5v15H6zM13.5 4.5H18v15h-4.5z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',S.playing?'Pausa':'Tocar');}
 
+/* ───────── Tocar uno mismo ───────── */
+var LV=null,YO={modo:'notas',pila:[],tap:[false,false,false,false,false,false,false],sopla:false},ESC=[0,2,4,5,7,9,11,12];
+function liveInit(){
+  audio();if(AC.state==='suspended')AC.resume();if(LV)return;
+  var osc=AC.createOscillator();osc.type='sawtooth';var g=AC.createGain();g.gain.value=0;osc.connect(g);g.connect(A.timbre);
+  var lfo=AC.createOscillator();lfo.frequency.value=5.4;var vib=AC.createGain();vib.gain.value=7;lfo.connect(vib);vib.connect(osc.detune);
+  osc.start();lfo.start();LV={osc:osc,g:g,on:false,note:null};
+}
+function liveNote(p){
+  liveInit();var t=AC.currentTime,f=440*Math.pow(2,(p+S.tune-69)/12),lev=0.85*Math.pow(520/f,0.35);
+  if(LV.on&&LV.note&&LV.note.p===p)return;
+  if(!LV.on){LV.osc.frequency.cancelScheduledValues(t);LV.osc.frequency.setValueAtTime(f,t);LV.osc.detune.cancelScheduledValues(t);LV.osc.detune.setValueAtTime(-38,t);LV.osc.detune.linearRampToValueAtTime(0,t+0.045);
+    LV.g.gain.cancelScheduledValues(t);LV.g.gain.setTargetAtTime(lev,t,0.011);}
+  else{LV.osc.frequency.cancelScheduledValues(t);LV.osc.frequency.setTargetAtTime(f,t,0.007);LV.g.gain.cancelScheduledValues(t);LV.g.gain.setTargetAtTime(lev,t,0.02);}
+  LV.on=true;LV.note={p:p,tongue:true};
+}
+function liveOff(){if(!LV||!LV.on)return;var t=AC.currentTime;LV.g.gain.cancelScheduledValues(t);LV.g.gain.setTargetAtTime(0,t,0.02);LV.on=false;}
+function yoUpdate(){
+  var oct=$('octAlta').checked?12:0;
+  if(YO.modo==='notas'){if(YO.pila.length)liveNote(S.T+YO.pila[YO.pila.length-1]+oct);else liveOff();return;}
+  // con los dedos: la nota la da el primer agujero abierto empezando por arriba
+  var k=0;while(k<7&&YO.tap[k])k++;for(var i=0;i<7;i++)S.liftT[i]=YO.tap[i]?0:1;
+  if(YO.sopla||$('continuo').checked)liveNote(S.T+ESC[7-k]+oct);else liveOff();
+}
+function hold(el,down,up){
+  var ids={};
+  el.addEventListener('pointerdown',function(e){e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(x){}ids[e.pointerId]=1;el.classList.add('on');down();});
+  function end(e){if(!ids[e.pointerId])return;delete ids[e.pointerId];if(!Object.keys(ids).length){el.classList.remove('on');up();}}
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);el.addEventListener('lostpointercapture',end);
+  el.addEventListener('contextmenu',function(e){e.preventDefault();});
+}
+function buildYo(){
+  var tc=$('teclas'),ag=$('agujeros'),tb=$('tabla'),h;tc.innerHTML='';ag.innerHTML='';
+  ESC.forEach(function(s){var b=document.createElement('button');b.type='button';b.className='tecla';b.textContent=NOMBRES[(S.T+s)%12];
+    hold(b,function(){YO.pila.push(s);yoUpdate();},function(){var i=YO.pila.lastIndexOf(s);if(i>=0)YO.pila.splice(i,1);yoUpdate();});tc.appendChild(b);});
+  [[2,'anular'],[1,'corazón'],[0,'índice'],[3,'índice'],[4,'corazón'],[5,'anular'],[6,'meñique']].forEach(function(d,n){
+    var b=document.createElement('button');b.type='button';b.className='agujero'+(n===3?' sep':'');b.innerHTML='<i>'+(d[0]+1)+'</i>'+d[1];
+    hold(b,function(){YO.tap[d[0]]=true;yoUpdate();},function(){YO.tap[d[0]]=false;yoUpdate();});ag.appendChild(b);});
+  h='<thead><tr><th>Nota</th>';for(var i=1;i<=7;i++)h+='<th>'+i+'</th>';h+='</tr></thead><tbody>';
+  ESC.forEach(function(s){var f=fingering(S.T+s).f;h+='<tr><td>'+NOMBRES[(S.T+s)%12]+(s===12?' agudo':'')+'</td>';for(var i=0;i<7;i++)h+='<td><b'+(f[i]?' class="t"':'')+'></b></td>';h+='</tr>';});
+  tb.innerHTML=h+'</tbody>';
+}
+function yoModo(m){
+  YO.modo=m;YO.pila=[];YO.tap=[false,false,false,false,false,false,false];YO.sopla=false;liveOff();
+  $('modoNotas').classList.toggle('on',m==='notas');$('modoDedos').classList.toggle('on',m==='dedos');
+  $('yoNotas').style.display=m==='notas'?'block':'none';$('yoDedos').style.display=m==='dedos'?'block':'none';
+  for(var i=0;i<7;i++)S.liftT[i]=m==='dedos'?1:0;
+}
+function enterYo(){stop();buildYo();go('yo');yoModo(YO.modo);}
+
 /* ───────── De la canción a las notas ───────── */
 var worker=null;
 function runExtract(x,fs,onP){
@@ -839,12 +942,13 @@ function demo(){
 
 /* ───────── Pantallas ───────── */
 function go(f){
-  S.fase=f;['foto','ajuste','cancion','analisis','tocar'].forEach(function(p){$('p-'+p).classList.toggle('on',p===f);});
+  S.fase=f;['foto','ajuste','cancion','analisis','tocar','yo'].forEach(function(p){$('p-'+p).classList.toggle('on',p===f);});
   var paso=f==='foto'||f==='ajuste'?0:(f==='tocar'?2:1),li=$('pasos').children;
   for(var i=0;i<3;i++){li[i].className=i<paso?'hecho':(i===paso?'aqui':'');}
-  $('pasos').style.display=f==='tocar'?'none':'flex';
+  $('pasos').style.display=(f==='tocar'||f==='yo')?'none':'flex';
+  if(f!=='yo')liveOff();
   cv.style.touchAction=f==='ajuste'?'none':'auto';cv.style.cursor=f==='ajuste'?'grab':'default';
-  if(f!=='tocar'){for(i=0;i<7;i++)S.liftT[i]=0;}
+  if(f!=='tocar'&&f!=='yo'){for(i=0;i<7;i++)S.liftT[i]=0;}
   if(f==='tocar')requestAnimationFrame(function(){var c=$('cinta'),dpr=Math.min(window.devicePixelRatio||1,2);c.width=Math.round(c.clientWidth*dpr);c.height=Math.round(64*dpr);});
 }
 function showError(m){var e=$('error');e.textContent=m;e.classList.add('on');}
@@ -861,6 +965,11 @@ each('.inCancion',function(el){el.addEventListener('change',function(){var f=thi
 $('sinFoto').addEventListener('click',function(){S.img=null;S.skin=[214,160,124];S.sleeve=[239,230,210];go('cancion');});
 $('fotoLista').addEventListener('click',function(){sampleSkin();go(S.notes.length?'tocar':'cancion');});
 $('demo').addEventListener('click',demo);
+$('irYo').addEventListener('click',enterYo);$('irYo2').addEventListener('click',enterYo);
+$('yoVolver').addEventListener('click',function(){go(S.notes.length?'tocar':'cancion');});
+$('modoNotas').addEventListener('click',function(){yoModo('notas');});$('modoDedos').addEventListener('click',function(){yoModo('dedos');});
+hold($('soplar'),function(){YO.sopla=true;yoUpdate();},function(){YO.sopla=false;yoUpdate();});
+$('continuo').addEventListener('change',function(){liveInit();yoUpdate();});$('octAlta').addEventListener('change',yoUpdate);
 $('play').addEventListener('click',function(){if(S.playing)stop();else play();});
 $('otraFoto').addEventListener('click',function(){stop();go('foto');});
 $('otraCancion').addEventListener('click',function(){stop();go('cancion');});
@@ -882,7 +991,7 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ins
 $('instalar').addEventListener('click',function(){if(!instEv)return;instEv.prompt();instEv.userChoice.then(function(){instEv=null;$('instalar').style.display='none';});});
 window.addEventListener('appinstalled',function(){$('cajaInst').style.display='none';});
 if(('serviceWorker' in navigator)&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
-window.__dz={S:S,G:G,audio:function(){return AC;},A:A,envDb:envDb};
+window.__dz={YO:YO,lv:function(){return LV;},S:S,G:G,audio:function(){return AC;},A:A,envDb:envDb};
 })();
 </script>
 </body>
