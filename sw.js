@@ -1,5 +1,5 @@
 // Dulzainero: guarda la aplicación para que funcione sin conexión
-var CACHE = 'dulzainero-v7';
+var CACHE = 'dulzainero-v6';
 var SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));

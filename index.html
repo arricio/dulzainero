@@ -101,6 +101,15 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .digit td:first-child,.digit th:first-child{text-align:left;font-weight:700;color:var(--carmesi)}
 .digit b{display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid var(--carmesi);vertical-align:middle}
 .digit b.t{background:var(--carmesi)}
+#q{scroll-margin-top:10px;width:100%;min-height:52px;padding:10px 16px;border-radius:26px;border:2px solid var(--carmesi);background:#fff8ea;color:var(--tinta);font:500 18px var(--ui);margin:0 0 8px;-webkit-appearance:none;appearance:none}
+#q::placeholder{color:#9a7c72}
+#resultados{margin:0 0 10px;max-height:300px;overflow-y:auto;border-radius:10px}
+.cancion{display:block;width:100%;text-align:left;padding:10px 12px;margin:0 0 4px;border:1.5px solid #c9b48d;border-radius:10px;background:#fff8ea;color:var(--tinta);font:500 17px var(--ui);cursor:pointer;line-height:1.25}
+.cancion small{display:block;font-size:13px;color:#6a4a44;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cancion:active{background:var(--boj)}
+.cancion mark{background:rgba(230,184,102,.6);color:inherit;border-radius:3px}
+.enl{background:none;border:0;padding:6px 0;color:var(--carmesi);font:700 16px var(--ui);text-decoration:underline;cursor:pointer}
+.sep{height:1px;background:var(--lino-2);margin:8px 0 14px}
 .resumen{font-size:15px;color:var(--verde);font-weight:500;margin:8px 0 0}
 .error{background:#fff;border-left:4px solid var(--carmesi);padding:10px 12px;margin:0 0 12px;font-size:16px;display:none}
 .error.on{display:block}
@@ -143,10 +152,24 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
     <section class="pane" id="p-cancion">
       <h2>¿Qué canción va a tocar?</h2>
-      <p>Sirve cualquier archivo de música o vídeo que tengas guardado. Sale mejor cuando la voz o el instrumento principal se oye claro.</p>
-      <label class="btn pick">Elegir canción del móvil<input type="file" class="inCancion" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac"></label>
+      <div id="libVacia">
+        <p>Para buscar por título, dile a la aplicación en qué carpeta guardas la música. Después solo tienes que escribir el nombre de la canción.</p>
+        <button class="btn" id="libReabrir" type="button" style="display:none"></button>
+        <button class="btn" id="libFSA" type="button" style="display:none">Elegir mi carpeta de música</button>
+        <label class="btn pick" id="libInput">Elegir mi carpeta de música<input type="file" id="libFiles" webkitdirectory multiple></label>
+        <p class="nota" id="libPista">Se abre el explorador del móvil: entra en la carpeta de la música y pulsa «Usar esta carpeta». Android no deja elegir Descargas entera ni la raíz del teléfono; elige Música u otra carpeta.</p>
+      </div>
+      <div id="libLlena" style="display:none">
+        <input type="search" id="q" placeholder="Escribe el título de la canción" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Buscar canción por título">
+        <p class="nota" id="libInfo" style="margin-bottom:8px"></p>
+        <div id="resultados"></div>
+        <button class="enl" id="libCambiar" type="button">Cambiar de carpeta</button>
+      </div>
+      <div class="sep"></div>
+      <label class="btn sec pick">Elegir un archivo suelto<input type="file" class="inCancion" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac"></label>
       <button class="btn sec" id="demo" type="button">Probar con una melodía de ejemplo</button>
       <button class="btn sec" id="irYo" type="button">Tocar yo la dulzaina</button>
+      <p class="nota">Sale mejor cuando la voz o el instrumento principal se oye claro.</p>
     </section>
 
     <section class="pane" id="p-yo">
@@ -828,6 +851,72 @@ function stop(ended){
 }
 function setIcon(){$('icoPlay').innerHTML=S.playing?'<path d="M6 4.5h4.5v15H6zM13.5 4.5H18v15h-4.5z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',S.playing?'Pausa':'Tocar');}
 
+/* ───────── Mis canciones: carpeta y buscador ───────── */
+var LIB={items:[],label:'',dir:null},AUD=/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|wma|m4b|amr|3gp|mp4|webm)$/i;
+var FSA=('showDirectoryPicker' in window)&&(function(){try{return window.self===window.top;}catch(e){return false;}})();
+function norm(t){t=String(t).toLowerCase();if(t.normalize)t=t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');return t.replace(/\.[a-z0-9]{2,5}$/,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
+function limpio(n){return n.replace(/\.[A-Za-z0-9]{2,5}$/,'').replace(/_/g,' ');}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function idb(mode,fn){return new Promise(function(res){try{var r=indexedDB.open('dulzainero',1);r.onupgradeneeded=function(){r.result.createObjectStore('kv');};
+  r.onerror=function(){res(null);};r.onsuccess=function(){try{var tx=r.result.transaction('kv',mode),q=fn(tx.objectStore('kv'));tx.oncomplete=function(){res(q&&q.result);};tx.onerror=function(){res(null);};}catch(e){res(null);}};}catch(e){res(null);}});}
+function scanDir(dir,path,out,depth){
+  var it=dir.values();
+  function step(){return it.next().then(function(r){if(r.done||out.length>=20000)return;var h=r.value,p=Promise.resolve();
+    if(h.kind==='file'){if(AUD.test(h.name))out.push({name:h.name,path:path,h:h,k:norm(h.name)});}
+    else if(depth<6&&h.name.charAt(0)!=='.')p=scanDir(h,path?path+'/'+h.name:h.name,out,depth+1).catch(function(){});
+    return p.then(step);});}
+  return step();
+}
+function libListo(items,label){
+  items.sort(function(a,b){return a.k<b.k?-1:a.k>b.k?1:0;});LIB.items=items;LIB.label=label;
+  if(!items.length){showError('En esa carpeta no he encontrado canciones. Elige la carpeta donde están los archivos de música.');libVista();return;}
+  hideError();libVista();$('q').value='';buscar();
+}
+function libVista(){
+  var hay=LIB.items.length>0;$('libVacia').style.display=hay?'none':'block';$('libLlena').style.display=hay?'block':'none';
+  $('libFSA').style.display=FSA?'flex':'none';$('libInput').style.display=FSA?'none':'flex';
+  if(hay)$('libInfo').textContent=LIB.items.length+(LIB.items.length===1?' canción':' canciones')+(LIB.label?' en «'+LIB.label+'»':'')+'.';
+}
+function libAbrir(dir,pedir){
+  var ok=pedir&&dir.requestPermission?dir.requestPermission({mode:'read'}):Promise.resolve('granted');
+  return ok.then(function(st){if(st!=='granted'){showError('Sin permiso no puedo leer la carpeta. Vuelve a tocar el botón y pulsa «Permitir».');return;}
+    $('libPista').textContent='Leyendo la carpeta…';var out=[];
+    return scanDir(dir,'',out,0).then(function(){LIB.dir=dir;idb('readwrite',function(st2){return st2.put(dir,'carpeta');});libListo(out,dir.name);});});
+}
+$('libFSA').addEventListener('click',function(){
+  hideError();var pr;try{pr=window.showDirectoryPicker({mode:'read',id:'musica',startIn:'music'});}catch(e){FSA=false;libVista();return;}
+  pr.then(function(dir){return libAbrir(dir,false);}).catch(function(e){if(e&&e.name==='AbortError')return;FSA=false;libVista();showError('No se ha podido abrir la carpeta de esa forma. Toca otra vez «Elegir mi carpeta de música».');});
+});
+$('libReabrir').addEventListener('click',function(){hideError();if(LIB.saved)libAbrir(LIB.saved,true).catch(function(){showError('No he podido volver a leer esa carpeta. Elígela de nuevo.');$('libReabrir').style.display='none';});});
+$('libFiles').addEventListener('change',function(){
+  var fs=this.files||[],out=[],label='';
+  for(var i=0;i<fs.length;i++){var f=fs[i];if(!(AUD.test(f.name)||(f.type&&f.type.indexOf('audio/')===0)))continue;
+    var rp=f.webkitRelativePath||'',parts=rp.split('/');if(!label&&parts.length>1)label=parts[0];
+    out.push({name:f.name,path:parts.length>2?parts.slice(1,-1).join('/'):'',f:f,k:norm(f.name)});}
+  this.value='';libListo(out,label);
+});
+$('libCambiar').addEventListener('click',function(){LIB.items=[];libVista();});
+function buscar(){
+  var q=norm($('q').value),ws=q?q.split(' '):[],hits=[],it=LIB.items,i,j;
+  for(i=0;i<it.length;i++){var k=it[i].k,okk=true,pos=0;for(j=0;j<ws.length;j++){var x=k.indexOf(ws[j]);if(x<0){okk=false;break;}if(j===0)pos=x;}
+    if(okk){hits.push({it:it[i],sc:(q&&k===q?0:(q&&k.indexOf(q)===0?1:(q&&k.indexOf(q)>0?2:3)))*1000+pos});if(!q&&hits.length>=40)break;}}
+  hits.sort(function(a,b){return a.sc-b.sc;});
+  var box=$('resultados');box.innerHTML='';
+  if(!hits.length){box.innerHTML='<p class="nota">No hay ninguna canción con ese título en la carpeta. Prueba con menos palabras.</p>';return;}
+  hits.slice(0,40).forEach(function(h){var b=document.createElement('button');b.type='button';b.className='cancion';
+    b.innerHTML=esc(limpio(h.it.name))+(h.it.path?'<small>'+esc(h.it.path)+'</small>':'');
+    b.addEventListener('click',function(){$('q').blur();var pf=h.it.f?Promise.resolve(h.it.f):h.it.h.getFile();
+      pf.then(loadSong).catch(function(){showError('No se ha podido abrir esa canción. Vuelve a elegir la carpeta.');});});
+    box.appendChild(b);});
+  if(hits.length>40){var m=document.createElement('p');m.className='nota';m.textContent='Hay más resultados: escribe más palabras del título.';box.appendChild(m);}
+}
+$('q').addEventListener('input',buscar);
+// con el teclado abierto, sube el buscador arriba del todo para que se vean los resultados
+$('q').addEventListener('focus',function(){var el=this;setTimeout(function(){try{el.scrollIntoView({block:'start',behavior:'smooth'});}catch(e){el.scrollIntoView(true);}},350);});
+$('q').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur();}});
+if(FSA)idb('readonly',function(st){return st.get('carpeta');}).then(function(dir){if(dir&&dir.kind==='directory'&&!LIB.items.length){LIB.saved=dir;var b=$('libReabrir');b.textContent='Cargar mis canciones de «'+dir.name+'»';b.style.display='flex';$('libFSA').className='btn sec';}});
+libVista();
+
 /* ───────── Tocar uno mismo ───────── */
 var LV=null,YO={modo:'notas',pila:[],tap:[false,false,false,false,false,false,false],sopla:false},ESC=[0,2,4,5,7,9,11,12];
 function liveInit(){
@@ -991,7 +1080,7 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ins
 $('instalar').addEventListener('click',function(){if(!instEv)return;instEv.prompt();instEv.userChoice.then(function(){instEv=null;$('instalar').style.display='none';});});
 window.addEventListener('appinstalled',function(){$('cajaInst').style.display='none';});
 if(('serviceWorker' in navigator)&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
-window.__dz={YO:YO,lv:function(){return LV;},S:S,G:G,audio:function(){return AC;},A:A,envDb:envDb};
+window.__dz={LIB:LIB,scanDir:scanDir,libListo:libListo,norm:norm,YO:YO,lv:function(){return LV;},S:S,G:G,audio:function(){return AC;},A:A,envDb:envDb};
 })();
 </script>
 </body>
