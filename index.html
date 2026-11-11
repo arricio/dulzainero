@@ -52,6 +52,7 @@ p{margin:0 0 12px}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:10px 16px;border-radius:26px;border:2px solid var(--carmesi);
   background:var(--carmesi);color:var(--lino);font:700 18px var(--ui);cursor:pointer;text-align:center;margin:0 0 10px}
 .btn.sec{background:transparent;color:var(--carmesi)}
+a.btn{text-decoration:none}
 .btn:active{transform:translateY(1px)}
 .btn:focus-visible,button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid var(--verde);outline-offset:2px}
 .pick{position:relative;overflow:hidden}
@@ -101,8 +102,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
       <p>Elige una foto de la galería y una canción del móvil. La persona de la foto la tocará con dulzaina leonesa, nota a nota.</p>
       <label class="btn pick">Elegir foto de la galería<input type="file" class="inFoto" accept="image/*"></label>
       <button class="btn sec" id="sinFoto" type="button">Seguir sin foto</button>
-      <button class="btn sec" id="instalar" type="button" style="display:none">Instalar la aplicación en el móvil</button>
-      <p class="nota" id="instIOS" style="display:none">Para tenerla con su icono en el iPhone: toca Compartir y luego «Añadir a pantalla de inicio».</p>
+      <div id="cajaInst">
+        <button class="btn sec" id="instalar" type="button" style="display:none">Instalar la aplicación en el móvil</button>
+        <p class="nota" id="instAnd">Para tenerla con su icono: toca los tres puntos de arriba a la derecha del navegador y elige «Instalar aplicación» o «Añadir a pantalla de inicio».</p>
+        <p class="nota" id="instIOS" style="display:none">Para tenerla con su icono en el iPhone: toca Compartir y luego «Añadir a pantalla de inicio».</p>
+      </div>
       <p class="nota">La foto y la canción no salen de tu móvil.</p>
     </section>
 
@@ -314,7 +318,7 @@ var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').mat
 
 /* ───────── Geometría del escenario (unidades: ancho = 1) ───────── */
 var G={ASP:1.2,mouth:[0.5,0.42],L:0.76,K:1.15,holesT:[0.235,0.30,0.365,0.43,0.495,0.56,0.625],
-  face:{cx:0.5,cy:0.275,rx:0.2,ry:0.255},cheekDX:0.125,cheekY:0.416,cheekR:0.145};
+  face:{cx:0.5,cy:0.275,rx:0.2,ry:0.255},cheekDX:0.125,cheekY:0.416,cheekR:0.135};
 G.top=G.mouth[1]-0.02;
 function holeY(i){return G.top+G.L*G.holesT[i];}
 var RINGS=[[0.083,.10],[0.150,.12],[0.160,.10],[0.745,.10],[0.760,.13],[0.775,.10],[0.862,.07],[0.878,.07],[0.990,.06]];
@@ -351,11 +355,11 @@ function initGL(){
   var vs='attribute vec2 a;varying vec2 vP;uniform float uAsp;void main(){vP=vec2((a.x+1.)*.5,(1.-a.y)*.5*uAsp);gl_Position=vec4(a,0.,1.);}';
   var fs='precision mediump float;varying vec2 vP;uniform sampler2D uTex;uniform vec3 uImg;uniform float uIA;uniform float uPuff;uniform float uPurse;uniform vec2 uSway;uniform vec2 uM;uniform vec3 uCh;'+
   'void main(){vec2 p=vP-uSway;float hl=0.;vec2 q=p;'+
-  'for(int i=0;i<2;i++){float s=(i==0?-1.:1.);vec2 c=vec2(uM.x+s*uCh.x,uCh.y);vec2 d=q-c;d.y*=.88;float t=length(d)/uCh.z;if(t<1.){float g=1.-t*t;g*=g;g*=smoothstep(.05,.135,abs(q.x-uM.x));p.x-=s*.056*uPuff*g;p.y-=.007*uPuff*g;hl+=g;}}'+
+  'for(int i=0;i<2;i++){float s=(i==0?-1.:1.);vec2 c=vec2(uM.x+s*uCh.x,uCh.y);vec2 d=q-c;d.y*=.88;float t=length(d)/uCh.z;if(t<1.){float g=1.-t*t;g*=g;g*=smoothstep(.05,.135,abs(q.x-uM.x));p.x-=s*.021*uPuff*g;p.y-=.003*uPuff*g;hl+=g;}}'+
   'vec2 dm=(p-uM)/vec2(.075,.036);float tm=length(dm);if(tm<1.){float w=1.-tm*tm;w*=w;p.x=uM.x+(p.x-uM.x)*(1.+.34*uPurse*w);}'+
   'vec2 uv=vec2((p.x-uImg.y)/uImg.x+.5,(p.y-uImg.z)/(uImg.x*uIA)+.5);'+
   'float e=.004;float al=smoothstep(0.,e,uv.x)*smoothstep(0.,e,uv.y)*smoothstep(0.,e,1.-uv.x)*smoothstep(0.,e,1.-uv.y);'+
-  'vec3 col=texture2D(uTex,clamp(uv,0.,1.)).rgb;col+=vec3(.07,.012,.0)*uPuff*hl;gl_FragColor=vec4(col*al,al);}';
+  'vec3 col=texture2D(uTex,clamp(uv,0.,1.)).rgb;col+=vec3(.035,.005,.0)*uPuff*hl;gl_FragColor=vec4(col*al,al);}';
   function sh(t,s){var o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o;}
   try{
     glp=gl.createProgram();gl.attachShader(glp,sh(gl.VERTEX_SHADER,vs));gl.attachShader(glp,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(glp);
@@ -501,8 +505,8 @@ function drawBust(){
   cx.fillStyle='#efe6d2';cx.beginPath();cx.moveTo(0.38,0.60);cx.lineTo(0.5,0.80);cx.lineTo(0.62,0.60);cx.fill();
   cx.fillStyle=rgb(S.skin,.86);cx.fillRect(0.42,0.48,0.16,0.14);
   var f=G.face,p=S.puff;cx.fillStyle=rgb(S.skin,1);cx.beginPath();cx.ellipse(f.cx,f.cy+0.012,f.rx*0.92+0.012*p,f.ry*0.94,0,0,7);cx.fill();
-  cx.fillStyle=rgb(S.skin,1.03);cx.beginPath();cx.ellipse(0.5-0.112-0.02*p,0.40,0.068+0.03*p,0.074+0.014*p,0,0,7);cx.ellipse(0.5+0.112+0.02*p,0.40,0.068+0.03*p,0.074+0.014*p,0,0,7);cx.fill();
-  cx.fillStyle='rgba(190,60,60,'+(0.12+0.2*p)+')';cx.beginPath();cx.ellipse(0.5-0.12-0.02*p,0.40,0.045,0.04,0,0,7);cx.ellipse(0.5+0.12+0.02*p,0.40,0.045,0.04,0,0,7);cx.fill();
+  cx.fillStyle=rgb(S.skin,1.03);cx.beginPath();cx.ellipse(0.5-0.112-0.009*p,0.40,0.068+0.013*p,0.074+0.006*p,0,0,7);cx.ellipse(0.5+0.112+0.009*p,0.40,0.068+0.013*p,0.074+0.006*p,0,0,7);cx.fill();
+  cx.fillStyle='rgba(190,60,60,'+(0.12+0.2*p)+')';cx.beginPath();cx.ellipse(0.5-0.12-0.009*p,0.40,0.045,0.04,0,0,7);cx.ellipse(0.5+0.12+0.009*p,0.40,0.045,0.04,0,0,7);cx.fill();
   cx.fillStyle='#2a1a12';cx.beginPath();cx.ellipse(0.425,0.265,0.017,0.011+0.004*(1-p),0,0,7);cx.ellipse(0.575,0.265,0.017,0.011+0.004*(1-p),0,0,7);cx.fill();
   cx.strokeStyle='#2a1a12';cx.lineWidth=0.012;cx.lineCap='round';cx.beginPath();cx.moveTo(0.39,0.232-0.008*p);cx.lineTo(0.455,0.228);cx.moveTo(0.545,0.228);cx.lineTo(0.61,0.232-0.008*p);cx.stroke();
   cx.strokeStyle=rgb(S.skin,.72);cx.lineWidth=0.008;cx.beginPath();cx.moveTo(0.5,0.27);cx.quadraticCurveTo(0.478,0.345,0.5,0.352);cx.stroke();
@@ -871,12 +875,13 @@ var rzT=0;window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setT
 initGL();resize();go('foto');paintRange($('zoom'));requestAnimationFrame(frame);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){});
 // instalación como aplicación (icono en la pantalla de inicio) y uso sin conexión
-var instEv=null,standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();instEv=e;$('instalar').style.display='flex';});
+var instEv=null,standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone,esIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+if(standalone)$('cajaInst').style.display='none';
+else if(esIOS){$('instAnd').style.display='none';$('instIOS').style.display='block';}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();instEv=e;$('instalar').style.display='flex';$('instAnd').textContent='Si el botón no hace nada, toca los tres puntos del navegador y elige «Instalar aplicación».';});
 $('instalar').addEventListener('click',function(){if(!instEv)return;instEv.prompt();instEv.userChoice.then(function(){instEv=null;$('instalar').style.display='none';});});
-window.addEventListener('appinstalled',function(){$('instalar').style.display='none';});
-if(!standalone&&/iphone|ipad|ipod/i.test(navigator.userAgent))$('instIOS').style.display='block';
-if('serviceWorker' in navigator&&location.protocol==='https:'||location.hostname==='localhost'){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
+window.addEventListener('appinstalled',function(){$('cajaInst').style.display='none';});
+if(('serviceWorker' in navigator)&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
 window.__dz={S:S,G:G,audio:function(){return AC;},A:A,envDb:envDb};
 })();
 </script>
